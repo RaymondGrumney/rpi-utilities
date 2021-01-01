@@ -1,0 +1,4 @@
+# returns the dir a script is running from
+# use this snippit to capture the dir the script is is in
+# from : https://stackoverflow.com/questions/59895/how-to-get-the-source-directory-of-a-bash-script-from-within-the-script-itself
+scriptdir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)
