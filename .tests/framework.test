@@ -1,0 +1,169 @@
+#! /bin/bash
+set -e
+
+wdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+. ${wdir}/framework
+TIMESTAMP_PATTERN="[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]:[0-9][0-9]"
+
+
+Test_Case "Test Suite not Required" &> tmp.log
+    Pass &>> tmp.log
+Test_Suite "Transient" &> tmp.2.log
+Test_Case "Description not Required" &>> tmp.2.log
+    Pass &>> tmp.2.log
+
+Test_Suite "Framework Test"
+Test_Category "Cases without Defined Test Suite"
+
+#log results of test case 1 (without test suite info)
+log "$(tail -n 2 tmp.log | head -n 1 | sed "s/${TIMESTAMP_PATTERN} //g" )"
+log "$(tail -n 1 tmp.log | sed "s/${TIMESTAMP_PATTERN} //g")"
+log "$(tail -n 2 tmp.2.log | head -n 1 | sed "s/${TIMESTAMP_PATTERN} //g" )"
+log "$(tail -n 1 tmp.2.log | sed "s/${TIMESTAMP_PATTERN} //g")"
+
+Test_Case "Test Case without Test Suite Creates Ad Hoch Suite"
+    if cat tmp.log | grep "Test Suite: Ad Hoc" &>/dev/null
+    then
+        Pass
+    else
+        Fail
+    fi
+rm tmp.log
+rm tmp.2.log
+
+Test_Category "The Test Suite"
+Test_Case "Creates Log File"
+    if [[ ! -z "${LOG}" && -f ${LOG} ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Logs Suite Name"
+    if [[ $(head -n 1 ${LOG}) == *"Framework Test" ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Logs Description"
+    if [[ $(head -n 2 ${LOG} || tail -n 1 == *"Framework behaves as expected" ) ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Category "Test Cases"
+Test_Case "Logs Test Names"
+    if [[ $(head -n 3 ${LOG} || tail -n 1 == *"Creates Log File" ) ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Logs Test Numbers"
+    if [[ $(head -n 3 ${LOG} || tail -n 1 == *"Test Case #1"* ) ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Category "Successful Test Cases"
+Test_Case "Passing Case"
+    Pass
+
+Passed_Test_Case_Line=$(( $(cat $(ls -1v $LOG | tail -n 1) | wc -l) - 1 ))
+
+Test_Case "Logs if Test Passes"
+    if [[ $(head -n $(( Passed_Test_Case_Line + 1 )) ${LOG} || tail -n 1 == *"passed"* ) ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+
+logSilent "Report for Testing purposes:"
+REPORT=$(Report)
+
+successes=${SUCCESSFUL_TESTS}
+total=${TOTAL_TESTS}
+
+Test_Case "Reports results"
+    if [[ ! -z ${REPORT} ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Report includes passes/total tests"
+    if [[ "${REPORT}" == *"Passed: ${successes}/${total}"* ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Report does not include failure results if all passing"
+    if [[ ! -z "${REPORT}" && ${REPORT} != *"Failed:"* && ${REPORT} != *"Failed Test Cases:"* ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+
+Test_Category "Failing Test Cases"
+Test_Case "Failing Case"
+    Fail
+failed_test=${TOTAL_TESTS}
+Failed_Test_Case_Line=$(( $(cat $(ls -1v $LOG | tail -n 1) | wc -l) - 1 ))
+log "  Test #${failed_test} will be counted as a success in final results"
+
+Test_Case "Logs if Test Fails"
+    if [[ $(head -n $(( Failed_Test_Case_Line + 1 )) ${LOG} || tail -n 1 == *"failed"* ) ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+logSilent "Report for Testing purposes:"
+REPORT=$(Report)
+
+successes=${SUCCESSFUL_TESTS}
+failures=${FAILED_TEST_COUNT}
+total=${TOTAL_TESTS}
+failed_list=${FAILED_TESTS}
+
+Test_Case "Report includes total failures tests"
+    if [[ "${REPORT}" == *"Failed: ${failures}"* ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Report includes list of failed"
+    if [[ ! -z "${failed_list}" ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+#Fixing counts
+log ""
+log "Final Report"
+log "  Test #${failed_test} is counted as a success in final results"
+FAILED_TESTS=${FAILED_TESTS/\#${failed_test}/}
+FAILED_TEST_COUNT=$(( FAILED_TEST_COUNT - 1 ))
+SUCCESSFUL_TESTS=$(( SUCCESSFUL_TESTS +1 ))
+
+Report

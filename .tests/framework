@@ -1,0 +1,75 @@
+set -e
+
+wdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+SUCCESSFUL_TESTS=0
+FAILED_TEST_COUNT=0
+TOTAL_TESTS=0
+
+function Test_Suite() {
+    SUITE=${1} && shift
+    if [ ${#} -ne 0 ]
+    then
+        DESCRIPTION=${@} && shift
+    fi
+
+    . ${wdir}/../logger "test.${SUITE/ /_}.*.log"
+    log Test Suite: ${SUITE}
+    log ${DESCRIPTION} 
+}
+
+function Test_Log() {
+    log ${@}
+}
+
+
+function Test_Category() {
+    if [[ -z "${SUITE}" ]]
+    then
+        echo "Consider declaring a Test_Suite for better logging!"
+        Test_Suite "Ad Hoc" "Tests with no suite defined"
+    fi
+
+    TOTAL_CATEGORIES=$(( TOTAL_CATEGORIES + 1 ))
+    local description=${@}
+    log "  Test Category #${TOTAL_CATEGORIES}: ${description} "
+}
+
+
+function Test_Case() {
+    if [[ -z "${SUITE}" ]]
+    then
+        echo "Consider declaring a Test_Suite for better logging!"
+        Test_Suite "Ad Hoc" "Tests with no suite defined"
+    fi
+
+    TOTAL_TESTS=$(( TOTAL_TESTS + 1 ))
+    local description=${@}
+    log "    Test Case #${TOTAL_TESTS}: ${description} "
+}
+
+function Pass() {
+    SUCCESSFUL_TESTS=$(( SUCCESSFUL_TESTS + 1 ))
+    log "      passed"
+}
+
+function Fail() {
+    FAILED_TEST_COUNT=$(( FAILED_TEST_COUNT + 1 ))
+    if [[ -z ${FAILED_TESTS} ]]
+    then
+        FAILED_TESTS="#${TOTAL_TESTS}"
+    else
+        FAILED_TESTS="${FAILED_TESTS}, #${TOTAL_TESTS}"
+    fi
+    log "      failed"
+}
+
+function Report() {
+    log ""
+    log "Passed: ${SUCCESSFUL_TESTS}/${TOTAL_TESTS}"
+    if [ $FAILED_TEST_COUNT -ne 0 ]
+    then
+        log "Failed: ${FAILED_TEST_COUNT}"
+        log "Failed Test Cases: ${FAILED_TESTS}"
+    fi
+}
