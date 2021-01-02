@@ -1,0 +1,24 @@
+#! /bin/bash
+# fail if error encountered
+set -e
+
+# wdir is where the test script lives, regardless of where it was called from
+wdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+# note here we're assuming the framework and test suites are in the same dir
+. ${wdir}/framework
+
+# A Test Suite is a single run of tests and will be writen to a single log file
+Test_Suite "Example Suite" "Suite Description"
+
+# Categories make it easier to group large numbers of tests together
+Test_Category "Example Category"
+
+# A test case is a single test testing a single feature or method
+Test_Case "Example Test Case"
+    if [[ true ]] # When a test passes
+    then
+        Pass
+    else          # Otherwise if fails
+        Fail
+    fi
