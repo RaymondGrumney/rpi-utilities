@@ -1,0 +1,32 @@
+#! /bin/bash
+set -e
+
+wdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+. ${wdir}/framework
+
+Test_Suite "ScriptDir Suite"
+
+Test_Case "Returns dir where script is"
+    pushd $(mktemp -d) &>/dev/null
+    cp ${wdir}/../scriptdir .
+    where_lives=$(pwd)
+    
+    mkdir temp
+    pushd temp &>/dev/null
+    where_ran=$(pwd)
+    . ../scriptdir
+    exit_code=$?
+    popd &>/dev/null
+    popd &>/dev/null
+
+    log "      Returned: ${scriptdir}"
+    log "      Ran From: ${where_ran}"
+    if [[ ${scriptdir} == ${where_lives} && ${scriptdir} != ${where_ran} && $exit_code == 0 ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+
+Report
