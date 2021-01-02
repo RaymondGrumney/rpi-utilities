@@ -135,7 +135,10 @@ Test_Case "Logs if Test Fails"
     fi
 
 logSilent "Report for Testing purposes:"
+set +e
 REPORT=$(Report)
+exit_code=$?
+set -e
 
 successes=${SUCCESSFUL_TESTS}
 failures=${FAILED_TEST_COUNT}
@@ -152,6 +155,22 @@ Test_Case "Report includes total failures tests"
 
 Test_Case "Report includes list of failed"
     if [[ ! -z "${failed_list}" ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Report failes if failures happened"
+    if [[ $exit_code != 0 ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Report exit code is number of errors"
+    if [[ $exit_code == $FAILED_TEST_COUNT ]]
     then
         Pass
     else

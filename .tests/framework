@@ -71,5 +71,6 @@ function Report() {
     then
         log "Failed: ${FAILED_TEST_COUNT}"
         log "Failed Test Cases: ${FAILED_TESTS}"
+        exit ${FAILED_TEST_COUNT}
     fi
 }
