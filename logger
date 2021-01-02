@@ -1,0 +1,37 @@
+#! /bin/bash
+set -e
+
+if [ "${#}" -ne 1 ] || [[ ${#} =~ ^[a-zA-Z*]+$ ]]; then "Must specify logname. Use * to do auto-log numbering." && exit 1; fi
+LOG="/var/log/${1}"
+DATE_FORMAT="+%Y-%m-%d_%H:%M"
+
+# if * is included, count logs
+if [[ ${LOG} == *"*"* ]]
+then
+    before=${LOG%\**}
+    after=${LOG##*\*}
+    last_log=$(ls -1v ${LOG} 2>/dev/null | tail -n 1)
+    count=${last_log/${before}/} && count=${count/${after}/}
+    LOG="${before}$(( count +1 ))${after}"
+fi
+
+if [[ ! -f ${LOG} ]]
+then
+    sudo touch ${LOG}
+    sudo chown $(whoami):$(whoami) $LOG 
+fi
+
+# funcions
+function logcall() {
+    log ${FUNCNAME[1]} $@
+}
+
+function log() {
+    TIMESTAMP=$(date ${DATE_FORMAT})
+    echo "${TIMESTAMP} ${@}" | tee -a ${LOG}
+}
+
+function logSilent() {
+    TIMESTAMP=$(date ${DATE_FORMAT})
+    echo "${TIMESTAMP} ${@}" >> ${LOG}
+}

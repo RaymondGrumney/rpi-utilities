@@ -1,0 +1,59 @@
+#! /bin/bash
+set -ex
+
+
+wdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+. ${wdir}/framework
+
+Test_Suite "Logger"
+
+Test_Case "Including logger will create log"
+    if [[ ! -z $(cat ${LOG}) ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Log function logs message"
+    log "      Test"
+    if [[ $(tail -n 1 ${LOG} == *Test ) ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+TIMESTAMP_PATTERN="[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]:[0-9][0-9]"
+Test_Case "Log function prepends timestamp"
+    if [[ $(tail -n 1 ${LOG} =~ ${TIMESTAMP_PATTERN} ) ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+    
+Test_Case "Logcall records the current function name"
+    function test_function(){
+        logcall
+    }
+    test_function
+
+    if [[  $(tail -n 1 ${LOG}) == *"test_function" ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Logsilent does not write to stdout"
+    result=$(logSilent "      silent test")
+
+    if [[ -z $(result) ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Report 
