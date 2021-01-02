@@ -1,14 +1,47 @@
 #! /bin/bash
-set -ex
-
+# note that these tests take advantage of the fact that the testing framework
+#   uses the logging utility
+set -e
 
 wdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+# test a few things without depending on the framework using the logger
+
+. ${wdir}/../logger "Logger.Transient.log"
+exit_code=$?
+
+if [[ -f ${LOG} && $exit_code == 0 ]]
+then
+    CREATED=TRUE
+else
+    CREATED=FALSE
+fi
+sudo rm ${LOG}
+
+temp_dir=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+. ${wdir}/../logger "${temp_dir}/Logger.Transient.log"
+exit_code=$?
+if [[ -f ${LOG} && $exit_code == 0 ]]
+then
+    CREATED_DIR=TRUE
+else
+    CREATED_DIR=FALSE
+fi
+sudo rm ${LOG}
+
 . ${wdir}/framework
 
 Test_Suite "Logger"
 
 Test_Case "Including logger will create log"
-    if [[ ! -z $(cat ${LOG}) ]]
+    if [[ ${CREATED} == "TRUE" ]]
+    then
+        Pass
+    else
+        Fail
+    fi
+
+Test_Case "Logger creates subdir if needed"
+    if [[ ${CREATED_DIR} == "TRUE" ]]
     then
         Pass
     else
@@ -17,7 +50,7 @@ Test_Case "Including logger will create log"
 
 Test_Case "Log function logs message"
     log "      Test"
-    if [[ $(tail -n 1 ${LOG} == *Test ) ]]
+    if [[ $(tail -n 1 ${LOG}) == *Test ]]
     then
         Pass
     else
@@ -26,7 +59,7 @@ Test_Case "Log function logs message"
 
 TIMESTAMP_PATTERN="[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]:[0-9][0-9]"
 Test_Case "Log function prepends timestamp"
-    if [[ $(tail -n 1 ${LOG} =~ ${TIMESTAMP_PATTERN} ) ]]
+    if [[ $(tail -n 1 ${LOG}) =~ ${TIMESTAMP_PATTERN} ]]
     then
         Pass
     else
@@ -49,7 +82,7 @@ Test_Case "Logcall records the current function name"
 Test_Case "Logsilent does not write to stdout"
     result=$(logSilent "      silent test")
 
-    if [[ -z $(result) ]]
+    if [[ -z ${result} ]]
     then
         Pass
     else

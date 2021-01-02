@@ -3,6 +3,7 @@ set -e
 
 if [ "${#}" -ne 1 ] || [[ ${#} =~ ^[a-zA-Z*]+$ ]]; then "Must specify logname. Use * to do auto-log numbering." && exit 1; fi
 LOG="/var/log/${1}"
+LOG_DIR=${LOG%/*}
 DATE_FORMAT="+%Y-%m-%d_%H:%M"
 
 # if * is included, count logs
@@ -13,6 +14,11 @@ then
     last_log=$(ls -1v ${LOG} 2>/dev/null | tail -n 1)
     count=${last_log/${before}/} && count=${count/${after}/}
     LOG="${before}$(( count +1 ))${after}"
+fi
+
+if [[ ! -f ${LOG_DIR} ]]
+then
+    sudo mkdir -p ${LOG_DIR}
 fi
 
 if [[ ! -f ${LOG} ]]
