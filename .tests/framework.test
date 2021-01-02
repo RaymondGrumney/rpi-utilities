@@ -103,6 +103,7 @@ Test_Case "Reports results"
     fi
 
 Test_Case "Report includes passes/total tests"
+    log "      Should be: ${successes}/${total} "
     if [[ "${REPORT}" == *"Passed: ${successes}/${total}"* ]]
     then
         Pass
@@ -146,6 +147,7 @@ total=${TOTAL_TESTS}
 failed_list=${FAILED_TESTS}
 
 Test_Case "Report includes total failures tests"
+    log "      Should be ${failures}"
     if [[ "${REPORT}" == *"Failed: ${failures}"* ]]
     then
         Pass
@@ -154,6 +156,7 @@ Test_Case "Report includes total failures tests"
     fi
 
 Test_Case "Report includes list of failed"
+    log "      Should be ${failed_list}"
     if [[ ! -z "${failed_list}" ]]
     then
         Pass
@@ -170,6 +173,8 @@ Test_Case "Report failes if failures happened"
     fi
 
 Test_Case "Report exit code is number of errors"
+    log "      Should be ${FAILED_TEST_COUNT}"
+    log "      Got ${exit_code}"
     if [[ $exit_code == $FAILED_TEST_COUNT ]]
     then
         Pass
