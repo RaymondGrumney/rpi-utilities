@@ -1,4 +1,6 @@
 #! /bin/bash
+# An example test suite, as a launching point of writing real suites
+
 # fail if error encountered
 set -e
 
@@ -9,6 +11,8 @@ wdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . ${wdir}/framework
 
 # A Test Suite is a single run of tests and will be writen to a single log file
+# This example will write to /var/log/tests/Example_Suite.*.log
+#   where * will be an auto-incrementing log number
 Test_Suite "Example Suite" "Suite Description"
 
 # Categories make it easier to group large numbers of tests together
@@ -22,3 +26,8 @@ Test_Case "Example Test Case"
     else          # Otherwise if fails
         Fail
     fi
+
+# TEST EVERYTHING
+
+# Then give a final report
+Report
