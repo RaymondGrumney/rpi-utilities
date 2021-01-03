@@ -1,0 +1,73 @@
+#! /bin/bash
+set -e
+
+wdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+. ${wdir}/errorhandling
+
+[ "${#}" -lt 1 ] && usage && exit 1
+
+function main() {
+    generate_key
+    push_key_to_remote
+    copy_files
+}
+
+function extract_args(){
+    for arg in $@
+    do
+        case ${arg} in
+            *@*:*)  RPI=${arg%:*}
+                    PTH=${arg##*:}
+                    ;;
+            *@*)    RPI=${arg};;
+            *)      FILES="${FILES} ${arg}";;
+        esac
+        shift
+    done
+
+    if [[ -z ${RPI} ]]
+    then 
+        [[ ! -f ssh-copier.target ]] && err "Create a file called \"ssh-copier.target\" with contents \"{USER}@{IP_ADDRESS} {PASSWORD}\" to authenticate to target." 2
+        RPI=$(cat ssh-copier.target | cut -d ' ' -f1)
+    fi
+
+    if [[ -z ${PTH} ]]
+    then 
+        PTH=$(cat ssh-copier.target | cut -d ' ' -f2 | grep . || echo "~")    # defaults to ~
+    fi
+}
+
+function usage() {
+    echo "At least one file to install required"
+}
+
+function generate_key(){
+    # generate key if none exists
+    if [[ ! -f ~/.ssh/id_rsa ]]
+    then
+        ssh-keygen -N "" -f ~/.ssh/id_rsa
+    fi
+}
+
+function push_key_to_remote(){
+    # test if remote has pub key
+    ssh_status=$(ssh -q -o StrictHostKeyChecking=no ${RPI} -o PubkeyAuthentication=yes -o PasswordAuthentication=no "ls >/dev/null </dev/null"; echo $?)
+    if [ "${ssh_status}" -ne 0 ]; then ssh-copy-id ${RPI}; fi
+}
+
+function copy_files(){
+    # copy files
+    for file in ${FILES}
+    do
+        if [[ -f ${file} ]]
+        then 
+            scp ${file} ${RPI}:${PTH}
+        else
+            echo "${file} not found. Skipping."
+        fi
+    done
+}
+
+extract_args $@
+main
