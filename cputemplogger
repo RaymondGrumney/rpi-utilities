@@ -1,0 +1,14 @@
+#! /bin/bash
+set -e
+
+wdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+. ${wdir}/logger cpu.temp.log
+
+INTERVAL=${1:-60}           # Logging interval in seconds
+log "Start CPU Tempurature Logging"
+
+while true
+do
+    logSilent $(/opt/vc/bin/vcgencmd measure_temp)
+    sleep $INTERVAL
+done &
